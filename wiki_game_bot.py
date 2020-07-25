@@ -3,16 +3,18 @@ from bs4 import BeautifulSoup
 import sys
 import threading
 
+from concurrent.futures import ThreadPoolExecutor
+
 class thread_for_with(threading.Thread):
 
     def __init__(self, func, args):
-        super().__init__(target = func, args =args )
+        super().__init__(target=func, args=args)
         self.func_to_run = func 
 
     def __enter__(self):
         return self
 
-    def __exit__(self,*kargs):
+    def __exit__(self, *kargs):
         #pass
         self.join()
 
@@ -26,10 +28,10 @@ class bot_player:
         self.found = False
 
         if requests.get(self.curr_url % self.start_page).status_code != 200:
-            print("Coudnt find the starting page please try again")
+            print("Couldn't find the starting page please try again")
 
         elif requests.get(self.curr_url % self.end_page).status_code != 200:
-            print("Coudnt find the ending page please try again")
+            print("Couldn't find the ending page please try again")
         else:
            self.solve(0,[],self.start_page)
             
@@ -37,7 +39,7 @@ class bot_player:
         
     def solve(self, count, visited_list, curr_page):
         if self.found:
-            return 
+            return
 
         print(f"in layer {count}")
 
@@ -52,10 +54,16 @@ class bot_player:
         for i in soap.find_all("div", {"class":"mw-body-content"}):
             linkes = [a['href'] for a in i.find_all("a", href = True)]
 
-        for i in linkes:
+        
+        #for i in linkes:
+        #    t = thread_for_with(self.condition, (i, visited_list,count,))
+        #    with t:
+        #        t.start()
+        thread_pool = ThreadPoolExecutor(max_workers=10)
+        with thread_pool:
+            for link in linkes:
             t = thread_for_with(self.condition, (i, visited_list,count,))
-            with t:
-                t.start()
+            thread_pool.submit(self.condition, i, visited_list, count)
 
 
 
